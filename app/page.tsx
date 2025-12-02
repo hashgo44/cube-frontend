@@ -1,6 +1,27 @@
 import Image from "next/image";
 
-export default function Home() {
+async function getBackendMessage() {
+  try {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
+    const res = await fetch(`${backendUrl}/`, {
+      cache: 'no-store' // Pour avoir toujours les données fraîches
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch');
+    }
+    
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching backend:', error);
+    return null;
+  }
+}
+
+export default async function Home() {
+  const backendData = await getBackendMessage();
+  
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
@@ -16,6 +37,28 @@ export default function Home() {
           <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
             bonjour
           </h1>
+          
+          {/* Affichage du message du backend */}
+          {backendData ? (
+            <div className="w-full max-w-md p-6 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <h2 className="text-xl font-semibold text-green-900 dark:text-green-100 mb-2">
+                Backend Status
+              </h2>
+              <p className="text-green-800 dark:text-green-200">
+                {backendData.message}
+              </p>
+              <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                Status: {backendData.status}
+              </p>
+            </div>
+          ) : (
+            <div className="w-full max-w-md p-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <p className="text-red-800 dark:text-red-200">
+                Impossible de se connecter au backend
+              </p>
+            </div>
+          )}
+          
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Looking for a starting point or more instructions? Head over to{" "}
             <a
