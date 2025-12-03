@@ -9,14 +9,21 @@ interface CreateArticleFormProps {
 }
 
 const CATEGORIES = [
-  "Électronique",
-  "Véhicules",
-  "Immobilier",
-  "Maison & Jardin",
-  "Mode",
-  "Sports & Loisirs",
-  "Services",
-  "Emploi",
+  "Cartes Pokémon",
+  "Cartes Yu-Gi-Oh!",
+  "Cartes Magic",
+  "Figurines & Statues",
+  "Vinyles & Disques",
+  "Bandes dessinées & Mangas",
+  "Timbres",
+  "Pièces & Monnaies",
+  "Jouets vintage",
+  "Sneakers",
+  "Montres",
+  "Art & Tableaux",
+  "Autographes",
+  "Memorabilia Sport",
+  "Jeux vidéo rétro",
   "Autre",
 ];
 
@@ -97,7 +104,7 @@ export function CreateArticleForm({ onSuccess, onCancel }: CreateArticleFormProp
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-900 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              placeholder="Ex: iPhone 14 Pro Max 256Go"
+              placeholder="Ex: Carte Pokémon Dracaufeu 1ère édition"
             />
           </div>
 
@@ -111,7 +118,7 @@ export function CreateArticleForm({ onSuccess, onCancel }: CreateArticleFormProp
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-900 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              placeholder="Décrivez votre article..."
+              placeholder="État, rareté, année, authenticité..."
             />
           </div>
 

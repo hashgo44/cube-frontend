@@ -9,8 +9,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Collector - Petites annonces simplifiées",
-  description: "Achetez et vendez facilement vos articles sur Collector",
+  title: "Collector - Achat & Vente d'objets de collection",
+  description: "La marketplace des collectionneurs. Cartes Pokémon, figurines, vinyles, montres et objets rares.",
 };
 
 export default function RootLayout({
