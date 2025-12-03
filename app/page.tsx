@@ -1,108 +1,180 @@
-import Image from "next/image";
+"use client";
 
-async function getBackendMessage() {
-  try {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
-    const res = await fetch(`${backendUrl}/`, {
-      cache: 'no-store' // Pour avoir toujours les données fraîches
-    });
-    
-    if (!res.ok) {
-      throw new Error('Failed to fetch');
+import { useEffect, useState, useCallback } from "react";
+import { Article } from "./types/article";
+import { ArticleCard } from "./components/ArticleCard";
+import { CreateArticleForm } from "./components/CreateArticleForm";
+
+export default function Home() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+  const fetchArticles = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("search", searchQuery);
+
+      const response = await fetch(`${backendUrl}/articles?${params.toString()}`);
+      if (!response.ok) throw new Error("Erreur lors du chargement");
+
+      const data = await response.json();
+      setArticles(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de connexion");
+    } finally {
+      setIsLoading(false);
     }
-    
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching backend:', error);
-    return null;
-  }
-}
+  }, [backendUrl, searchQuery]);
 
-export default async function Home() {
-  const backendData = await getBackendMessage();
-  
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      fetchArticles();
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [fetchArticles]);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette annonce ?")) return;
+
+    try {
+      const response = await fetch(`${backendUrl}/articles/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Erreur lors de la suppression");
+      fetchArticles();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur");
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            bonjour
-          </h1>
-          
-          {/* Affichage du message du backend */}
-          {backendData ? (
-            <div className="w-full max-w-md p-6 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <h2 className="text-xl font-semibold text-green-900 dark:text-green-100 mb-2">
-                Backend Status
-              </h2>
-              <p className="text-green-800 dark:text-green-200">
-                {backendData.message}
-              </p>
-              <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                Status: {backendData.status}
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/40 to-white">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30">
+              <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
             </div>
-          ) : (
-            <div className="w-full max-w-md p-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-              <p className="text-red-800 dark:text-red-200">
-                Impossible de se connecter au backend
-              </p>
-            </div>
-          )}
-          
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+            <h1 className="text-xl font-bold text-zinc-900">
+              Collector
+            </h1>
+          </div>
+
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 font-medium text-white shadow-lg shadow-emerald-500/30 transition-all hover:bg-emerald-600 hover:shadow-emerald-500/40"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Déposer une annonce
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Search Bar */}
+        <div className="mb-8">
+          <div className="relative">
+            <svg
+              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher une annonce..."
+              className="w-full rounded-2xl border border-zinc-200 bg-white py-4 pl-12 pr-4 text-zinc-900 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+            />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mb-6 flex items-center justify-between">
+          <p className="text-sm text-zinc-500">
+            {articles.length} annonce{articles.length > 1 ? "s" : ""} disponible{articles.length > 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {/* Content */}
+        {isLoading ? (
+          <div className="flex min-h-[400px] items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
+              <p className="text-zinc-500">Chargement des annonces...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <p className="text-center text-zinc-600">{error}</p>
+            <button
+              onClick={fetchArticles}
+              className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 font-medium text-white transition-colors hover:bg-zinc-800"
+            >
+              Réessayer
+            </button>
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
+              <svg className="h-10 w-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-zinc-900">Aucune annonce</p>
+              <p className="mt-1 text-sm text-zinc-500">
+                Soyez le premier à déposer une annonce !
+              </p>
+            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-2 cursor-pointer rounded-xl bg-emerald-500 px-6 py-2.5 font-medium text-white transition-colors hover:bg-emerald-600"
+            >
+              Créer une annonce
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {articles.map((article) => (
+              <ArticleCard key={article.id} article={article} onDelete={handleDelete} />
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* Create Form Modal */}
+      {showForm && (
+        <CreateArticleForm
+          onSuccess={() => {
+            setShowForm(false);
+            fetchArticles();
+          }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
     </div>
   );
 }
