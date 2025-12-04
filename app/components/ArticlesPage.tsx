@@ -10,9 +10,10 @@ import { deleteArticle } from "../actions/articles";
 interface ArticlesPageProps {
   initialArticles: Article[];
   searchQuery?: string;
+  error?: string | null;
 }
 
-export function ArticlesPage({ initialArticles, searchQuery = "" }: ArticlesPageProps) {
+export function ArticlesPage({ initialArticles, searchQuery = "", error }: ArticlesPageProps) {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState(searchQuery);
   const [isPending, startTransition] = useTransition();
@@ -34,6 +35,10 @@ export function ArticlesPage({ initialArticles, searchQuery = "" }: ArticlesPage
     if (!result.success) {
       alert(result.error || "Erreur lors de la suppression");
     }
+  };
+
+  const handleRetry = () => {
+    router.refresh();
   };
 
   return (
@@ -90,40 +95,60 @@ export function ArticlesPage({ initialArticles, searchQuery = "" }: ArticlesPage
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-zinc-500">
-            {initialArticles.length} annonce{initialArticles.length > 1 ? "s" : ""} disponible{initialArticles.length > 1 ? "s" : ""}
-          </p>
-        </div>
-
-        {/* Content */}
-        {initialArticles.length === 0 ? (
+        {/* Error State */}
+        {error ? (
           <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
-              <svg className="h-10 w-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <div className="text-center">
-              <p className="font-medium text-zinc-900">Aucune annonce</p>
-              <p className="mt-1 text-sm text-zinc-500">
-                Soyez le premier à déposer une annonce !
-              </p>
-            </div>
+            <p className="text-center text-zinc-600">{error}</p>
             <button
-              onClick={() => setShowForm(true)}
-              className="mt-2 cursor-pointer rounded-xl bg-emerald-500 px-6 py-2.5 font-medium text-white transition-colors hover:bg-emerald-600"
+              onClick={handleRetry}
+              className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 font-medium text-white transition-colors hover:bg-zinc-800"
             >
-              Créer une annonce
+              Réessayer
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {initialArticles.map((article) => (
-              <ArticleCard key={article.id} article={article} onDelete={handleDelete} />
-            ))}
-          </div>
+          <>
+            {/* Stats */}
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-sm text-zinc-500">
+                {initialArticles.length} annonce{initialArticles.length > 1 ? "s" : ""} disponible{initialArticles.length > 1 ? "s" : ""}
+              </p>
+            </div>
+
+            {/* Content */}
+            {initialArticles.length === 0 ? (
+              <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
+                  <svg className="h-10 w-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <p className="font-medium text-zinc-900">Aucune annonce</p>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Soyez le premier à déposer une annonce !
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="mt-2 cursor-pointer rounded-xl bg-emerald-500 px-6 py-2.5 font-medium text-white transition-colors hover:bg-emerald-600"
+                >
+                  Créer une annonce
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {initialArticles.map((article) => (
+                  <ArticleCard key={article.id} article={article} onDelete={handleDelete} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
 
@@ -137,4 +162,3 @@ export function ArticlesPage({ initialArticles, searchQuery = "" }: ArticlesPage
     </div>
   );
 }
-
