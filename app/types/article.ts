@@ -19,3 +19,4 @@ export interface ArticleCreate {
   contact_email?: string;
 }
 
+

@@ -1,180 +1,41 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
+import { getArticles } from "./actions/articles";
+import { ArticlesPage } from "./components/ArticlesPage";
 import { Article } from "./types/article";
-import { ArticleCard } from "./components/ArticleCard";
-import { CreateArticleForm } from "./components/CreateArticleForm";
 
-export default function Home() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+interface HomeProps {
+  searchParams: Promise<{ search?: string }>;
+}
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+export default async function Home({ searchParams }: HomeProps) {
+  const { search } = await searchParams;
 
-  const fetchArticles = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const params = new URLSearchParams();
-      if (searchQuery) params.append("search", searchQuery);
+  let articles: Article[] = [];
+  let error: string | null = null;
 
-      const response = await fetch(`${backendUrl}/articles?${params.toString()}`);
-      if (!response.ok) throw new Error("Erreur lors du chargement");
+  try {
+    articles = await getArticles(search);
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Erreur de connexion";
+  }
 
-      const data = await response.json();
-      setArticles(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur de connexion");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [backendUrl, searchQuery]);
-
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      fetchArticles();
-    }, 300);
-
-    return () => clearTimeout(debounce);
-  }, [fetchArticles]);
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette annonce ?")) return;
-
-    try {
-      const response = await fetch(`${backendUrl}/articles/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Erreur lors de la suppression");
-      fetchArticles();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Erreur");
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/40 to-white">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30">
-              <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-            </div>
-            <h1 className="text-xl font-bold text-zinc-900">
-              Collector
-            </h1>
-          </div>
-
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 font-medium text-white shadow-lg shadow-emerald-500/30 transition-all hover:bg-emerald-600 hover:shadow-emerald-500/40"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Déposer une annonce
-          </button>
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-br from-white via-emerald-50/40 to-white">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
         </div>
-      </header>
+        <p className="text-center text-zinc-600">{error}</p>
+        <a
+          href="/"
+          className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 font-medium text-white transition-colors hover:bg-zinc-800"
+        >
+          Réessayer
+        </a>
+      </div>
+    );
+  }
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative">
-            <svg
-              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une annonce..."
-              className="w-full rounded-2xl border border-zinc-200 bg-white py-4 pl-12 pr-4 text-zinc-900 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
-            />
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-zinc-500">
-            {articles.length} annonce{articles.length > 1 ? "s" : ""} disponible{articles.length > 1 ? "s" : ""}
-          </p>
-        </div>
-
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex min-h-[400px] items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
-              <p className="text-zinc-500">Chargement des annonces...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-              <svg className="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <p className="text-center text-zinc-600">{error}</p>
-            <button
-              onClick={fetchArticles}
-              className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 font-medium text-white transition-colors hover:bg-zinc-800"
-            >
-              Réessayer
-            </button>
-          </div>
-        ) : articles.length === 0 ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
-              <svg className="h-10 w-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-zinc-900">Aucune annonce</p>
-              <p className="mt-1 text-sm text-zinc-500">
-                Soyez le premier à déposer une annonce !
-              </p>
-            </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-2 cursor-pointer rounded-xl bg-emerald-500 px-6 py-2.5 font-medium text-white transition-colors hover:bg-emerald-600"
-            >
-              Créer une annonce
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article) => (
-              <ArticleCard key={article.id} article={article} onDelete={handleDelete} />
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Create Form Modal */}
-      {showForm && (
-        <CreateArticleForm
-          onSuccess={() => {
-            setShowForm(false);
-            fetchArticles();
-          }}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
-    </div>
-  );
+  return <ArticlesPage initialArticles={articles} searchQuery={search} />;
 }
