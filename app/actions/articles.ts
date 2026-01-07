@@ -23,7 +23,7 @@ export async function getArticles(search?: string): Promise<Article[]> {
     }
 
     const data = await response.json();
-    console.log("✅ [Server] Articles fetchedd:", data.length);
+    console.log("✅ [Server] Articles fetched:", data.length);
     return data;
   } catch (error) {
     console.error("❌ [Server] Error:", error);
