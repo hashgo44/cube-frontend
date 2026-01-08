@@ -18,7 +18,7 @@ export async function getArticles(search?: string): Promise<Article[]> {
     });
 
     if (!response.ok) {
-      console.error("❌ [Server] Failed to fetch articles:", response.status);
+      console.error("❌ [Server] Failed to fetch articless:", response.status);
       throw new Error("Erreur lors du chargement des articles");
     }
 
